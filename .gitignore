@@ -5,5 +5,8 @@ temp_uploads/
 .env
 .venv/
 venv/
-best_model.pth
 dataset/
+*.pdf
+test*.jpg
+yuktha*.ipynb
+1.html
