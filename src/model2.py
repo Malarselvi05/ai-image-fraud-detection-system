@@ -180,16 +180,16 @@ def predict_image(image_path, risk_mode="moderate_scrutiny"):
     }
 
     # Only generate Grad-CAM if Medium or High
-    if risk_tier in ["HIGH", "MEDIUM"]:
-        gradcam_data = generate_gradcam(
-            image_path,
-            model,
-            val_transform,
-            device
-        )
-        result["visualization"] = gradcam_data
-    else:
-        result["visualization"] = None
+   # if risk_tier in ["HIGH", "MEDIUM"]:
+    #    gradcam_data = generate_gradcam(
+     #       image_path,
+      #      model,
+        #    val_transform,
+         #   device
+        #)
+      #  result["visualization"] = gradcam_data
+  #  else:
+    result["visualization"] = None
 
     return result
 
