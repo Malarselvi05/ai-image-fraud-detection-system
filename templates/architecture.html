@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceOff AI – System Architecture</title>
+    <meta name="description"
+        content="FaceOff AI system architecture: EfficientNet B0 pipeline with Grad-CAM and LIME explainability.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #050a14;
+            --bg-2: #080f20;
+            --panel: rgba(255, 255, 255, 0.04);
+            --panel-border: rgba(255, 255, 255, 0.07);
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.3);
+            --accent-light: #60a5fa;
+            --purple: #818cf8;
+            --green: #22c55e;
+            --orange: #f59e0b;
+            --red: #ef4444;
+            --cyan: #06b6d4;
+            --text: #e2e8f0;
+            --text-muted: rgba(226, 232, 240, 0.55);
+            --text-dim: rgba(226, 232, 240, 0.3);
+        }
+
+        html,
+        body {
+            min-height: 100vh;
+            background: radial-gradient(ellipse at 50% 0%, #0d1b4e 0%, #050a14 60%);
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+        }
+
+        /* ── HEADER ── */
+        .header {
+            text-align: center;
+            padding: 56px 20px 40px;
+            animation: fadeDown 0.6s ease both;
+        }
+
+        .header-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 16px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--accent-light);
+            margin-bottom: 20px;
+        }
+
+        .header-title {
+            font-size: 2.6rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200%;
+            animation: shimmer 4s linear infinite;
+            margin-bottom: 14px;
+            letter-spacing: -1px;
+        }
+
+        .header-sub {
+            font-size: 1rem;
+            color: var(--text-muted);
+            max-width: 560px;
+            margin: 0 auto 28px;
+            line-height: 1.6;
+        }
+
+        .nav-pills {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-pill {
+            padding: 7px 18px;
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: border-color 0.2s, color 0.2s, background 0.2s;
+        }
+
+        .nav-pill:hover,
+        .nav-pill.active {
+            background: rgba(59, 130, 246, 0.12);
+            border-color: rgba(59, 130, 246, 0.35);
+            color: var(--accent-light);
+        }
+
+        /* ── PIPELINE ── */
+        .pipeline-wrap {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 24px 80px;
+        }
+
+        .pipeline {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+        }
+
+        /* ── BLOCK ── */
+        .block {
+            width: 100%;
+            max-width: 560px;
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 20px 24px;
+            cursor: pointer;
+            transition: border-color 0.25s, background 0.25s, transform 0.2s, box-shadow 0.25s;
+            position: relative;
+            animation: fadeUp 0.5s ease both;
+        }
+
+        .block:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .block.active {
+            border-color: var(--accent);
+            background: rgba(59, 130, 246, 0.08);
+            box-shadow: 0 0 0 1px var(--accent), 0 12px 32px var(--accent-glow);
+        }
+
+        .block-inner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .block-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .block-content {
+            flex: 1;
+        }
+
+        .block-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .block-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .block-badge {
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+
+        .block-arrow {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            transition: color 0.2s;
+        }
+
+        .block:hover .block-arrow,
+        .block.active .block-arrow {
+            color: var(--accent-light);
+        }
+
+        /* Block color themes */
+        .b-user .block-icon {
+            background: rgba(59, 130, 246, 0.15);
+        }
+
+        .b-api .block-icon {
+            background: rgba(129, 140, 248, 0.15);
+        }
+
+        .b-preprocess .block-icon {
+            background: rgba(6, 182, 212, 0.15);
+        }
+
+        .b-model .block-icon {
+            background: rgba(245, 158, 11, 0.15);
+        }
+
+        .b-calibrate .block-icon {
+            background: rgba(168, 85, 247, 0.15);
+        }
+
+        .b-risk .block-icon {
+            background: rgba(239, 68, 68, 0.15);
+        }
+
+        .b-explain .block-icon {
+            background: rgba(34, 197, 94, 0.15);
+        }
+
+        .b-admin .block-icon {
+            background: rgba(59, 130, 246, 0.15);
+        }
+
+        .badge-blue {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: var(--accent-light);
+        }
+
+        .badge-purple {
+            background: rgba(129, 140, 248, 0.15);
+            border: 1px solid rgba(129, 140, 248, 0.3);
+            color: var(--purple);
+        }
+
+        .badge-cyan {
+            background: rgba(6, 182, 212, 0.15);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: var(--cyan);
+        }
+
+        .badge-orange {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: var(--orange);
+        }
+
+        .badge-violet {
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            color: #c084fc;
+        }
+
+        .badge-red {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--red);
+        }
+
+        .badge-green {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: var(--green);
+        }
+
+        /* ── ARROW ── */
+        .arrow-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4px 0;
+            gap: 0;
+        }
+
+        .arrow-line {
+            width: 2px;
+            height: 24px;
+            background: linear-gradient(to bottom, rgba(59, 130, 246, 0.4), rgba(59, 130, 246, 0.15));
+            position: relative;
+        }
+
+        .arrow-head {
+            width: 0;
+            height: 0;
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            border-top: 10px solid rgba(59, 130, 246, 0.5);
+        }
+
+        .arrow-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin: 2px 0;
+        }
+
+        /* ── DECISION FORK ── */
+        .decision-fork {
+            width: 100%;
+            max-width: 560px;
+            margin: 0;
+        }
+
+        .fork-title {
+            text-align: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .fork-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .fork-card {
+            border-radius: 14px;
+            padding: 16px 14px;
+            text-align: center;
+            border: 1px solid;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: default;
+        }
+
+        .fork-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .fork-card.low {
+            background: rgba(34, 197, 94, 0.08);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .fork-card.medium {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .fork-card.high {
+            background: rgba(239, 68, 68, 0.08);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .fork-icon {
+            font-size: 1.6rem;
+            margin-bottom: 8px;
+        }
+
+        .fork-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .fork-card.low .fork-label {
+            color: var(--green);
+        }
+
+        .fork-card.medium .fork-label {
+            color: var(--orange);
+        }
+
+        .fork-card.high .fork-label {
+            color: var(--red);
+        }
+
+        .fork-desc {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* ── DETAIL PANEL ── */
+        .detail-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 360px;
+            background: #080f20;
+            border-left: 1px solid var(--panel-border);
+            padding: 32px 28px;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 200;
+            overflow-y: auto;
+        }
+
+        .detail-panel.open {
+            transform: translateX(0);
+        }
+
+        .detail-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 32px;
+            height: 32px;
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--text-muted);
+            transition: background 0.2s;
+        }
+
+        .detail-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+        }
+
+        .detail-icon {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+        }
+
+        .detail-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .detail-subtitle {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section-title {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        .detail-text {
+            font-size: 0.82rem;
+            line-height: 1.7;
+            color: var(--text-muted);
+        }
+
+        .detail-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--accent-light);
+            font-family: 'JetBrains Mono', monospace;
+            margin: 3px 3px 3px 0;
+        }
+
+        .detail-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.8rem;
+        }
+
+        .detail-metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: var(--text-muted);
+        }
+
+        .metric-value {
+            font-weight: 700;
+            color: var(--accent-light);
+        }
+
+        /* ── TECH STACK SECTION ── */
+        .tech-section {
+            max-width: 900px;
+            margin: 0 auto 60px;
+            padding: 0 24px;
+        }
+
+        .tech-title {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text-muted);
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .tech-card {
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .tech-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .tech-card-icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .tech-card-name {
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .tech-card-role {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+        }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            100% {
+                background-position: 200% 50%;
+            }
+        }
+
+        @keyframes flow {
+
+            0%,
+            100% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .arrow-line {
+            animation: flow 2s ease-in-out infinite;
+        }
+
+        /* Stagger animation delays */
+        .block:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .block:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .block:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .block:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+
+        .block:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+
+        .block:nth-child(6) {
+            animation-delay: 0.3s;
+        }
+
+        .block:nth-child(7) {
+            animation-delay: 0.35s;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        @media (max-width: 600px) {
+            .header-title {
+                font-size: 1.8rem;
+            }
+
+            .fork-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .detail-panel {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-eyebrow">🏗️ System Architecture</div>
+        <h1 class="header-title">FaceOff AI Pipeline</h1>
+        <p class="header-sub">End-to-end AI image moderation pipeline powered by EfficientNet B0, Grad-CAM, and LIME
+            explainability. Click any block to explore details.</p>
+        <div class="nav-pills">
+            <a class="nav-pill" href="/">🌐 Public Upload</a>
+            <a class="nav-pill" href="/admin">📋 Admin Dashboard</a>
+            <a class="nav-pill active" href="/architecture">🏗️ Architecture</a>
+        </div>
+    </header>
+
+    <!-- PIPELINE -->
+    <div class="pipeline-wrap">
+        <div class="pipeline">
+
+            <!-- Block 1: User Upload -->
+            <div class="block b-user" onclick="showDetail('user', this)">
+                <div class="block-inner">
+                    <div class="block-icon">👤</div>
+                    <div class="block-content">
+                        <div class="block-title">User Upload</div>
+                        <div class="block-sub">Image submitted via drag-drop or file browser</div>
+                    </div>
+                    <span class="block-badge badge-blue">Entry Point</span>
+                    <span class="block-arrow">›</span>
+                </div>
+            </div>
+
+            <div class="arrow-wrap">
+                <div class="arrow-line"></div>
+                <div class="arrow-label">HTTP POST /analyze</div>
+                <div class="arrow-head"></div>
+            </div>
+
+            <!-- Block 2: FastAPI -->
+            <div class="block b-api" onclick="showDetail('api', this)">
+                <div class="block-inner">
+                    <div class="block-icon">⚡</div>
+                    <div class="block-content">
+                        <div class="block-title">FastAPI API Layer</div>
+                        <div class="block-sub">Request validation, rate limiting, multipart handling</div>
+                    </div>
+                    <span class="block-badge badge-purple">Backend</span>
+                    <span class="block-arrow">›</span>
+                </div>
+            </div>
+
+            <div class="arrow-wrap">
+                <div class="arrow-line"></div>
+                <div class="arrow-label">Raw image bytes</div>
+                <div class="arrow-head"></div>
+            </div>
+
+            <!-- Block 3: Preprocessing -->
+            <div class="block b-preprocess" onclick="showDetail('preprocess', this)">
+                <div class="block-inner">
+                    <div class="block-icon">🔧</div>
+                    <div class="block-content">
+                        <div class="block-title">Image Preprocessing</div>
+                        <div class="block-sub">Resize 224×224, normalize, augment for inference</div>
+                    </div>
+                    <span class="block-badge badge-cyan">Pipeline</span>
+                    <span class="block-arrow">›</span>
+                </div>
+            </div>
+
+            <div class="arrow-wrap">
+                <div class="arrow-line"></div>
+                <div class="arrow-label">Tensor [1, 3, 224, 224]</div>
+                <div class="arrow-head"></div>
+            </div>
+
+            <!-- Block 4: EfficientNet -->
+            <div class="block b-model" onclick="showDetail('model', this)">
+                <div class="block-inner">
+                    <div class="block-icon">🧠</div>
+                    <div class="block-content">
+                        <div class="block-title">EfficientNet B0 Model</div>
+                        <div class="block-sub">Fine-tuned CNN for AI-generated image detection</div>
+                    </div>
+                    <span class="block-badge badge-orange">Core AI</span>
+                    <span class="block-arrow">›</span>
+                </div>
+            </div>
+
+            <div class="arrow-wrap">
+                <div class="arrow-line"></div>
+                <div class="arrow-label">Raw logits</div>
+                <div class="arrow-head"></div>
+            </div>
+
+            <!-- Block 5: Calibration -->
+            <div class="block b-calibrate" onclick="showDetail('calibrate', this)">
+                <div class="block-inner">
+                    <div class="block-icon">📐</div>
+                    <div class="block-content">
+                        <div class="block-title">Probability Calibration</div>
+                        <div class="block-sub">Platt scaling / temperature scaling for reliable scores</div>
+                    </div>
+                    <span class="block-badge badge-violet">Calibration</span>
+                    <span class="block-arrow">›</span>
+                </div>
+            </div>
+
+            <div class="arrow-wrap">
+                <div class="arrow-line"></div>
+                <div class="arrow-label">Calibrated probability [0–1]</div>
+                <div class="arrow-head"></div>
+            </div>
+
+            <!-- Block 6: Risk Engine -->
+            <div class="block b-risk" onclick="showDetail('risk', this)">
+                <div class="block-inner">
+                    <div class="block-icon">⚖️</div>
+                    <div class="block-content">
+                        <div class="block-title">Risk Engine</div>
+                        <div class="block-sub">Threshold logic maps probability → risk tier + decision</div>
+                    </div>
+                    <span class="block-badge badge-red">Decision</span>
+                    <span class="block-arrow">›</span>
+                </div>
+            </div>
+
+            <!-- Decision Fork -->
+            <div class="arrow-wrap">
+                <div class="arrow-line"></div>
+                <div class="arrow-label">Risk tier output</div>
+                <div class="arrow-head"></div>
+            </div>
+
+            <div class="decision-fork" style="animation: fadeUp 0.5s ease 0.35s both;">
+                <div class="fork-title">Decision Branch</div>
+                <div class="fork-grid">
+                    <div class="fork-card low">
+                        <div class="fork-icon">✅</div>
+                        <div class="fork-label">LOW</div>
+                        <div class="fork-desc">p &lt; 0.40<br>Auto-approve<br>User enters platform</div>
+                    </div>
+                    <div class="fork-card medium">
+                        <div class="fork-icon">⚠️</div>
+                        <div class="fork-label">MEDIUM</div>
+                        <div class="fork-desc">0.40 ≤ p &lt; 0.75<br>Queue for review<br>Tracking ID issued</div>
+                    </div>
+                    <div class="fork-card high">
+                        <div class="fork-icon">🚫</div>
+                        <div class="fork-label">HIGH</div>
+                        <div class="fork-desc">p ≥ 0.75<br>Auto-block<br>User redirected</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow-wrap">
+                <div class="arrow-line"></div>
+                <div class="arrow-label">For MEDIUM risk only</div>
+                <div class="arrow-head"></div>
+            </div>
+
+            <!-- Block 7: Explainability -->
+            <div class="block b-explain" onclick="showDetail('explain', this)">
+                <div class="block-inner">
+                    <div class="block-icon">🔬</div>
+                    <div class="block-content">
+                        <div class="block-title">Explainability Engine</div>
+                        <div class="block-sub">Grad-CAM heatmaps + LIME feature attribution</div>
+                    </div>
+                    <span class="block-badge badge-green">XAI</span>
+                    <span class="block-arrow">›</span>
+                </div>
+            </div>
+
+            <div class="arrow-wrap">
+                <div class="arrow-line"></div>
+                <div class="arrow-label">Heatmap + feature weights</div>
+                <div class="arrow-head"></div>
+            </div>
+
+            <!-- Block 8: Admin Dashboard -->
+            <div class="block b-admin" onclick="showDetail('admin', this)">
+                <div class="block-inner">
+                    <div class="block-icon">🖥️</div>
+                    <div class="block-content">
+                        <div class="block-title">Admin Dashboard</div>
+                        <div class="block-sub">Human moderator reviews, approves or rejects</div>
+                    </div>
+                    <span class="block-badge badge-blue">Human Loop</span>
+                    <span class="block-arrow">›</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TECH STACK -->
+    <div class="tech-section">
+        <div class="tech-title">Technology Stack</div>
+        <div class="tech-grid">
+            <div class="tech-card">
+                <div class="tech-card-icon">⚡</div>
+                <div class="tech-card-name">FastAPI</div>
+                <div class="tech-card-role">API Framework</div>
+            </div>
+            <div class="tech-card">
+                <div class="tech-card-icon">🧠</div>
+                <div class="tech-card-name">EfficientNet B0</div>
+                <div class="tech-card-role">Detection Model</div>
+            </div>
+            <div class="tech-card">
+                <div class="tech-card-icon">🔥</div>
+                <div class="tech-card-name">PyTorch</div>
+                <div class="tech-card-role">Deep Learning</div>
+            </div>
+            <div class="tech-card">
+                <div class="tech-card-icon">🌡️</div>
+                <div class="tech-card-name">Grad-CAM</div>
+                <div class="tech-card-role">Visual XAI</div>
+            </div>
+            <div class="tech-card">
+                <div class="tech-card-icon">🔬</div>
+                <div class="tech-card-name">LIME</div>
+                <div class="tech-card-role">Feature XAI</div>
+            </div>
+            <div class="tech-card">
+                <div class="tech-card-icon">📐</div>
+                <div class="tech-card-name">Platt Scaling</div>
+                <div class="tech-card-role">Calibration</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DETAIL PANEL -->
+    <div class="detail-panel" id="detailPanel">
+        <div class="detail-close" onclick="closeDetail()">✕</div>
+        <div class="detail-icon" id="detailIcon"></div>
+        <div class="detail-title" id="detailTitle"></div>
+        <div class="detail-subtitle" id="detailSubtitle"></div>
+        <div id="detailContent"></div>
+    </div>
+
+    <script>
+        const details = {
+            user: {
+                icon: '👤',
+                title: 'User Upload Interface',
+                subtitle: 'Public-facing entry point for image submission',
+                content: `
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-text">The public upload interface accepts images via drag-and-drop or file browser. Users select a scrutiny level before submission. The UI enforces risk-based decisions without exposing internal AI confidence scores.</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Technologies</div>
+          <span class="detail-tag">HTML5</span><span class="detail-tag">Vanilla JS</span><span class="detail-tag">FormData API</span><span class="detail-tag">FileReader API</span>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Key Features</div>
+          <div class="detail-metric"><span class="metric-label">Drag & Drop</span><span class="metric-value">✓</span></div>
+          <div class="detail-metric"><span class="metric-label">Image Preview</span><span class="metric-value">✓</span></div>
+          <div class="detail-metric"><span class="metric-label">Risk Mode Selector</span><span class="metric-value">3 Levels</span></div>
+          <div class="detail-metric"><span class="metric-label">Probability Exposed</span><span class="metric-value" style="color:var(--green)">Never</span></div>
+        </div>`
+            },
+            api: {
+                icon: '⚡',
+                title: 'FastAPI API Layer',
+                subtitle: 'High-performance async Python backend',
+                content: `
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-text">FastAPI handles incoming multipart/form-data requests, validates file types and sizes, applies rate limiting, and orchestrates the moderation pipeline. Async endpoints ensure non-blocking I/O.</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Endpoints</div>
+          <span class="detail-tag">POST /analyze</span><span class="detail-tag">GET /review-queue</span><span class="detail-tag">POST /approve/{id}</span><span class="detail-tag">POST /reject/{id}</span>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Specifications</div>
+          <div class="detail-metric"><span class="metric-label">Framework</span><span class="metric-value">FastAPI 0.100+</span></div>
+          <div class="detail-metric"><span class="metric-label">Runtime</span><span class="metric-value">Uvicorn ASGI</span></div>
+          <div class="detail-metric"><span class="metric-label">Max File Size</span><span class="metric-value">10 MB</span></div>
+          <div class="detail-metric"><span class="metric-label">Accepted Types</span><span class="metric-value">JPG, PNG, WEBP</span></div>
+        </div>`
+            },
+            preprocess: {
+                icon: '🔧',
+                title: 'Image Preprocessing',
+                subtitle: 'Standardizing input for model inference',
+                content: `
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-text">Raw uploaded images are decoded, resized to 224×224 pixels, converted to RGB, and normalized using ImageNet mean/std values. This ensures consistent input distribution for the EfficientNet model.</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Operations</div>
+          <span class="detail-tag">PIL.Image</span><span class="detail-tag">torchvision.transforms</span><span class="detail-tag">Normalize</span>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Parameters</div>
+          <div class="detail-metric"><span class="metric-label">Input Size</span><span class="metric-value">224 × 224</span></div>
+          <div class="detail-metric"><span class="metric-label">Channels</span><span class="metric-value">RGB (3)</span></div>
+          <div class="detail-metric"><span class="metric-label">Mean</span><span class="metric-value">[0.485, 0.456, 0.406]</span></div>
+          <div class="detail-metric"><span class="metric-label">Std</span><span class="metric-value">[0.229, 0.224, 0.225]</span></div>
+        </div>`
+            },
+            model: {
+                icon: '🧠',
+                title: 'EfficientNet B0 Model',
+                subtitle: 'Fine-tuned CNN for AI image detection',
+                content: `
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-text">EfficientNet B0 is fine-tuned on a balanced dataset of real and AI-generated images. The final classification head is replaced with a binary output layer. The model learns to detect texture artifacts, frequency anomalies, and GAN fingerprints.</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Stack</div>
+          <span class="detail-tag">PyTorch</span><span class="detail-tag">torchvision</span><span class="detail-tag">EfficientNet-B0</span>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Model Specs</div>
+          <div class="detail-metric"><span class="metric-label">Architecture</span><span class="metric-value">EfficientNet B0</span></div>
+          <div class="detail-metric"><span class="metric-label">Parameters</span><span class="metric-value">~5.3M</span></div>
+          <div class="detail-metric"><span class="metric-label">Output</span><span class="metric-value">Binary (AI / Real)</span></div>
+          <div class="detail-metric"><span class="metric-label">Training</span><span class="metric-value">Transfer Learning</span></div>
+        </div>`
+            },
+            calibrate: {
+                icon: '📐',
+                title: 'Probability Calibration',
+                subtitle: 'Ensuring reliable confidence scores',
+                content: `
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-text">Raw model outputs (logits) are transformed into calibrated probabilities using Platt scaling or temperature scaling. This corrects overconfident or underconfident predictions, ensuring the probability score reliably reflects true likelihood.</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Methods</div>
+          <span class="detail-tag">Platt Scaling</span><span class="detail-tag">Temperature Scaling</span><span class="detail-tag">Sigmoid</span>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Output</div>
+          <div class="detail-metric"><span class="metric-label">Range</span><span class="metric-value">0.0 – 1.0</span></div>
+          <div class="detail-metric"><span class="metric-label">Interpretation</span><span class="metric-value">P(AI-generated)</span></div>
+          <div class="detail-metric"><span class="metric-label">Reliability</span><span class="metric-value">Calibrated ECE</span></div>
+        </div>`
+            },
+            risk: {
+                icon: '⚖️',
+                title: 'Risk Engine',
+                subtitle: 'Threshold-based decision logic',
+                content: `
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-text">The Risk Engine maps calibrated probability scores to risk tiers using configurable thresholds. The scrutiny level selected by the user shifts these thresholds, making the system more or less sensitive to potential AI content.</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Thresholds (Moderate Scrutiny)</div>
+          <div class="detail-metric"><span class="metric-label">LOW (Approve)</span><span class="metric-value" style="color:var(--green)">p &lt; 0.40</span></div>
+          <div class="detail-metric"><span class="metric-label">MEDIUM (Review)</span><span class="metric-value" style="color:var(--orange)">0.40 ≤ p &lt; 0.75</span></div>
+          <div class="detail-metric"><span class="metric-label">HIGH (Block)</span><span class="metric-value" style="color:var(--red)">p ≥ 0.75</span></div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Scrutiny Modes</div>
+          <div class="detail-metric"><span class="metric-label">High Scrutiny</span><span class="metric-value">Lower thresholds</span></div>
+          <div class="detail-metric"><span class="metric-label">Moderate</span><span class="metric-value">Balanced</span></div>
+          <div class="detail-metric"><span class="metric-label">Low Scrutiny</span><span class="metric-value">Higher thresholds</span></div>
+        </div>`
+            },
+            explain: {
+                icon: '🔬',
+                title: 'Explainability Engine',
+                subtitle: 'Grad-CAM + LIME for transparent AI decisions',
+                content: `
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-text">The explainability engine generates visual and textual explanations for model decisions. Grad-CAM produces heatmaps highlighting image regions that most influenced the prediction. LIME provides feature-level attribution scores for moderator review.</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Methods</div>
+          <span class="detail-tag">Grad-CAM</span><span class="detail-tag">LIME</span><span class="detail-tag">pytorch-grad-cam</span>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Outputs</div>
+          <div class="detail-metric"><span class="metric-label">Grad-CAM</span><span class="metric-value">Heatmap overlay</span></div>
+          <div class="detail-metric"><span class="metric-label">LIME</span><span class="metric-value">Feature weights</span></div>
+          <div class="detail-metric"><span class="metric-label">Audience</span><span class="metric-value">Admin only</span></div>
+          <div class="detail-metric"><span class="metric-label">Trigger</span><span class="metric-value">MEDIUM risk only</span></div>
+        </div>`
+            },
+            admin: {
+                icon: '🖥️',
+                title: 'Admin Dashboard',
+                subtitle: 'Human-in-the-loop moderation panel',
+                content: `
+        <div class="detail-section">
+          <div class="detail-section-title">Description</div>
+          <div class="detail-text">The admin dashboard provides moderators with full transparency into AI decisions. Moderators can inspect Grad-CAM heatmaps, LIME feature attributions, and risk reasoning before making approve or reject decisions.</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Features</div>
+          <span class="detail-tag">Review Queue</span><span class="detail-tag">Image Modal</span><span class="detail-tag">Grad-CAM View</span><span class="detail-tag">LIME Summary</span><span class="detail-tag">History Log</span>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Capabilities</div>
+          <div class="detail-metric"><span class="metric-label">AI Probability</span><span class="metric-value" style="color:var(--green)">Visible</span></div>
+          <div class="detail-metric"><span class="metric-label">Grad-CAM</span><span class="metric-value" style="color:var(--green)">Visible</span></div>
+          <div class="detail-metric"><span class="metric-label">LIME Features</span><span class="metric-value" style="color:var(--green)">Visible</span></div>
+          <div class="detail-metric"><span class="metric-label">Auto-refresh</span><span class="metric-value">30s interval</span></div>
+        </div>`
+            }
+        };
+
+        let activeBlock = null;
+
+        function showDetail(key, el) {
+            const d = details[key];
+            if (!d) return;
+
+            // Deactivate previous
+            document.querySelectorAll('.block').forEach(b => b.classList.remove('active'));
+
+            // Activate clicked block
+            if (el) el.classList.add('active');
+            activeBlock = key;
+
+            document.getElementById('detailIcon').textContent = d.icon;
+            document.getElementById('detailTitle').textContent = d.title;
+            document.getElementById('detailSubtitle').textContent = d.subtitle;
+            document.getElementById('detailContent').innerHTML = d.content;
+            document.getElementById('detailPanel').classList.add('open');
+        }
+
+        function closeDetail() {
+            document.getElementById('detailPanel').classList.remove('open');
+            document.querySelectorAll('.block').forEach(b => b.classList.remove('active'));
+            activeBlock = null;
+        }
+
+        // Close on escape
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+    </script>
+</body>
+
+</html>

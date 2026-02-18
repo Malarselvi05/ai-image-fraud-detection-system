@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+heatmaps/
+temp_uploads/
+.env
+.venv/
+venv/
+best_model.pth
+dataset/

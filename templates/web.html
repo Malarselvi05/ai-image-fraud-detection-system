@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceOff AI – Real-Time Image Moderation</title>
+    <meta name="description"
+        content="FaceOff AI: Enterprise-grade real-time AI image moderation platform with risk-based decision enforcement.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --blue-1: #0a0f1e;
+            --blue-2: #0d1b3e;
+            --blue-3: #112259;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.35);
+            --accent-light: #60a5fa;
+            --green: #22c55e;
+            --green-bg: rgba(34, 197, 94, 0.12);
+            --green-border: rgba(34, 197, 94, 0.4);
+            --orange: #f59e0b;
+            --orange-bg: rgba(245, 158, 11, 0.12);
+            --orange-border: rgba(245, 158, 11, 0.4);
+            --red: #ef4444;
+            --red-bg: rgba(239, 68, 68, 0.12);
+            --red-border: rgba(239, 68, 68, 0.4);
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text: #e2e8f0;
+            --text-muted: rgba(226, 232, 240, 0.55);
+        }
+
+        html,
+        body {
+            min-height: 100vh;
+            background: radial-gradient(ellipse at 20% 20%, #0d1b4e 0%, #060b1a 55%, #0a0f1e 100%);
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 40px 20px 60px;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            text-align: center;
+            margin-bottom: 36px;
+            animation: fadeDown 0.6s ease both;
+        }
+
+        .logo-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--accent), #818cf8);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .logo-text {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .header-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+        }
+
+        .badge-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            border: 1px solid;
+        }
+
+        .badge-blue {
+            background: rgba(59, 130, 246, 0.12);
+            border-color: rgba(59, 130, 246, 0.35);
+            color: var(--accent-light);
+        }
+
+        .badge-green {
+            background: var(--green-bg);
+            border-color: var(--green-border);
+            color: var(--green);
+        }
+
+        /* ── CARD ── */
+        .card {
+            width: 100%;
+            max-width: 520px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 36px 36px 32px;
+            backdrop-filter: blur(24px);
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.03);
+            animation: fadeUp 0.7s ease both;
+        }
+
+        /* ── RISK SELECTOR ── */
+        .section-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .select-wrapper {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .select-wrapper::after {
+            content: '▾';
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent-light);
+            pointer-events: none;
+            font-size: 14px;
+        }
+
+        select#riskMode {
+            width: 100%;
+            padding: 13px 40px 13px 16px;
+            background: rgba(15, 25, 60, 0.8);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: 12px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            appearance: none;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        select#riskMode:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        select#riskMode option {
+            background: #0d1b3e;
+        }
+
+        /* ── DROP ZONE ── */
+        .drop-zone {
+            border: 2px dashed rgba(59, 130, 246, 0.3);
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.25s, background 0.25s, transform 0.2s;
+            position: relative;
+            background: rgba(59, 130, 246, 0.03);
+            margin-bottom: 20px;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: var(--accent);
+            background: rgba(59, 130, 246, 0.08);
+            transform: scale(1.01);
+        }
+
+        .drop-zone.has-image {
+            border-color: var(--accent);
+            padding: 12px;
+        }
+
+        .drop-icon {
+            font-size: 2.8rem;
+            margin-bottom: 12px;
+            display: block;
+            transition: transform 0.3s;
+        }
+
+        .drop-zone:hover .drop-icon {
+            transform: translateY(-4px);
+        }
+
+        .drop-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .drop-sub {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+
+        .browse-btn {
+            display: inline-block;
+            padding: 8px 20px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.35);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent-light);
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .browse-btn:hover {
+            background: rgba(59, 130, 246, 0.28);
+            border-color: var(--accent);
+        }
+
+        #previewImg {
+            max-width: 100%;
+            max-height: 220px;
+            border-radius: 10px;
+            object-fit: contain;
+            display: none;
+        }
+
+        /* ── MULTI-FILE PREVIEW GRID ── */
+        .preview-grid {
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+            padding: 4px;
+        }
+        .preview-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .preview-item img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+        .preview-item .remove-btn {
+            position: absolute;
+            top: 3px; right: 3px;
+            width: 18px; height: 18px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            color: white;
+            border: none;
+            line-height: 1;
+        }
+        .preview-item .file-name {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(0,0,0,0.6);
+            font-size: 0.55rem;
+            padding: 2px 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: rgba(255,255,255,0.8);
+        }
+        .file-count-badge {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(59,130,246,0.1);
+            border: 1px solid rgba(59,130,246,0.25);
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--accent-light);
+            margin-bottom: 12px;
+        }
+
+        /* ── BATCH RESULTS ── */
+        .batch-results {
+            display: none;
+            margin-top: 20px;
+            max-height: 320px;
+            overflow-y: auto;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+        .batch-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.82rem;
+            transition: background 0.15s;
+        }
+        .batch-item:last-child { border-bottom: none; }
+        .batch-item:hover { background: rgba(255,255,255,0.03); }
+        .batch-thumb {
+            width: 40px; height: 40px;
+            border-radius: 6px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: rgba(255,255,255,0.06);
+        }
+        .batch-info { flex: 1; min-width: 0; }
+        .batch-fname {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+        .batch-sub { font-size: 0.72rem; color: var(--text-muted); }
+        .batch-status { flex-shrink: 0; }
+
+        /* ── UPLOAD BUTTON ── */
+        #uploadBtn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.3px;
+            transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.35);
+            margin-bottom: 0;
+        }
+
+        #uploadBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(59, 130, 246, 0.5);
+        }
+
+        #uploadBtn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        #uploadBtn:disabled {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.3);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* ── LOADER ── */
+        .loader-wrap {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            padding: 28px 0 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 3px solid rgba(59, 130, 246, 0.15);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .loader-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .loader-dots span {
+            display: inline-block;
+            animation: blink 1.2s infinite;
+            font-size: 1.2rem;
+            color: var(--accent-light);
+        }
+
+        .loader-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loader-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        /* ── RESULT BOX ── */
+        .result-box {
+            display: none;
+            margin-top: 24px;
+            padding: 24px;
+            border-radius: 16px;
+            animation: fadeUp 0.4s ease both;
+            text-align: center;
+        }
+
+        .result-box.low {
+            background: var(--green-bg);
+            border: 1px solid var(--green-border);
+        }
+
+        .result-box.medium {
+            background: var(--orange-bg);
+            border: 1px solid var(--orange-border);
+        }
+
+        .result-box.high {
+            background: var(--red-bg);
+            border: 1px solid var(--red-border);
+        }
+
+        .result-icon {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        .result-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .result-box.low .result-title {
+            color: var(--green);
+        }
+
+        .result-box.medium .result-title {
+            color: var(--orange);
+        }
+
+        .result-box.high .result-title {
+            color: var(--red);
+        }
+
+        .result-desc {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .tracking-id {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 8px 16px;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-family: 'Courier New', monospace;
+            color: var(--orange);
+            word-break: break-all;
+        }
+
+        .tracking-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .countdown-bar {
+            height: 4px;
+            background: rgba(239, 68, 68, 0.2);
+            border-radius: 2px;
+            margin-top: 16px;
+            overflow: hidden;
+        }
+
+        .countdown-fill {
+            height: 100%;
+            background: var(--red);
+            border-radius: 2px;
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        .countdown-text {
+            font-size: 0.75rem;
+            color: rgba(239, 68, 68, 0.7);
+            margin-top: 6px;
+        }
+
+        /* ── ENTER BUTTON ── */
+        #enterBtn {
+            display: none;
+            width: 100%;
+            margin-top: 16px;
+            padding: 13px;
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 4px 18px rgba(34, 197, 94, 0.3);
+            letter-spacing: 0.3px;
+        }
+
+        #enterBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(34, 197, 94, 0.45);
+        }
+
+        /* ── RE-UPLOAD BUTTON ── */
+        #reUploadBtn {
+            display: none;
+            width: 100%;
+            margin-top: 10px;
+            padding: 11px;
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.2s, color 0.2s, background 0.2s;
+        }
+        #reUploadBtn:hover {
+            border-color: var(--accent);
+            color: var(--accent-light);
+            background: rgba(59,130,246,0.06);
+        }
+
+        .explain-trigger-btn {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 10px;
+            color: var(--accent-light);
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .explain-trigger-btn:hover {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        /* ── FILE INFO BAR ── */
+        .file-info-bar {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            margin-bottom: 14px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            animation: fadeIn 0.3s ease;
+        }
+        .file-info-bar .fi-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .file-info-bar .fi-sep {
+            width: 1px;
+            height: 12px;
+            background: var(--glass-border);
+        }
+        .fi-warn {
+            color: var(--orange);
+            font-weight: 600;
+        }
+
+        /* ── CONFIDENCE GAUGE ── */
+        .conf-gauge-wrap {
+            display: none;
+            margin: 16px 0 4px;
+            animation: fadeIn 0.4s ease;
+        }
+        .conf-gauge-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .conf-gauge-track {
+            height: 8px;
+            background: rgba(255,255,255,0.07);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+        .conf-gauge-fill {
+            height: 100%;
+            border-radius: 99px;
+            width: 0%;
+            transition: width 1s cubic-bezier(.4,0,.2,1);
+        }
+        .conf-gauge-ticks {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4px;
+            font-size: 0.62rem;
+            color: rgba(255,255,255,0.25);
+        }
+
+        /* ── EXPLAIN PANEL ── */
+        .explain-panel {
+            display: none;
+            margin-top: 16px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(245,158,11,0.25);
+            background: rgba(245,158,11,0.04);
+            animation: fadeUp 0.4s ease both;
+        }
+        .explain-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 1px solid rgba(245,158,11,0.15);
+        }
+        .explain-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--orange);
+        }
+        .explain-chevron {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            transition: transform 0.25s;
+        }
+        .explain-panel.open .explain-chevron { transform: rotate(180deg); }
+        .explain-body {
+            display: none;
+            padding: 18px;
+            gap: 16px;
+            flex-direction: column;
+        }
+        .explain-panel.open .explain-body { display: flex; }
+
+        /* Explain: loader */
+        .explain-loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            padding: 8px 0;
+        }
+        .explain-spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(245,158,11,0.2);
+            border-top-color: var(--orange);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
+
+        /* Explain: heatmap */
+        .explain-heatmap {
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .explain-heatmap img {
+            width: 100%;
+            border-radius: 10px;
+            display: block;
+        }
+        .explain-heatmap-label {
+            position: absolute;
+            bottom: 8px; left: 8px;
+            background: rgba(0,0,0,0.65);
+            color: rgba(255,255,255,0.85);
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            letter-spacing: 0.4px;
+        }
+
+        /* Explain: section title */
+        .explain-section-title {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        /* Explain: LIME bars */
+        .lime-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 0.78rem;
+        }
+        .lime-label { width: 130px; flex-shrink: 0; color: var(--text-muted); }
+        .lime-bar-track {
+            flex: 1;
+            height: 6px;
+            background: rgba(255,255,255,0.07);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+        .lime-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.8s ease;
+        }
+        .lime-val { width: 28px; text-align: right; font-weight: 600; font-size: 0.72rem; }
+
+        /* Explain: reliability gauge */
+        .reliability-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .reliability-circle {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            border: 3px solid;
+        }
+        .reliability-text { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
+
+        /* Explain: summary box */
+        .explain-summary {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.65;
+        }
+
+        /* ── UPLOAD HISTORY ── */
+        .history-section {
+            display: none;
+            margin-top: 28px;
+            animation: fadeIn 0.5s ease;
+        }
+        .history-title {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .history-entry {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            font-size: 0.76rem;
+            transition: background 0.15s;
+        }
+        .history-entry:hover { background: rgba(255,255,255,0.06); }
+        .history-thumb {
+            width: 32px; height: 32px;
+            border-radius: 6px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: rgba(255,255,255,0.06);
+        }
+        .history-info { flex: 1; min-width: 0; }
+        .history-fname {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 1px;
+        }
+        .history-meta { font-size: 0.68rem; color: var(--text-muted); }
+        .history-badge {
+            flex-shrink: 0;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .history-badge.LOW { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+        .history-badge.MEDIUM { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange-border); }
+        .history-badge.HIGH { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+
+        /* ── FOOTER ── */
+        .footer {
+            margin-top: 32px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-align: center;
+            animation: fadeIn 1s ease both;
+        }
+
+        .footer a {
+            color: var(--accent-light);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes blink {
+
+            0%,
+            80%,
+            100% {
+                opacity: 0;
+            }
+
+            40% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                box-shadow: 0 0 0 0 var(--accent-glow);
+            }
+
+            70% {
+                box-shadow: 0 0 0 12px transparent;
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 transparent;
+            }
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* ── DIVIDER ── */
+        .divider {
+            height: 1px;
+            background: var(--glass-border);
+            margin: 24px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="logo-row">
+            <div class="logo-icon">🛡️</div>
+            <span class="logo-text">FaceOff AI</span>
+        </div>
+        <p class="header-subtitle">Real-Time AI Image Moderation Engine</p>
+        <div class="badge-row">
+            <span class="badge badge-blue">⚡ AI-Powered Detection</span>
+            <span class="badge badge-green">🔒 AI Protected</span>
+            <span class="badge badge-blue">🏢 Enterprise Grade</span>
+        </div>
+    </header>
+
+    <!-- MAIN CARD -->
+    <div class="card">
+
+        <!-- Risk Mode -->
+        <div class="section-label">Scrutiny Level</div>
+        <div class="select-wrapper">
+            <select id="riskMode">
+                <option value="high_scrutiny">🔴 High Scrutiny</option>
+                <option value="moderate_scrutiny" selected>🟡 Moderate Scrutiny</option>
+                <option value="low_scrutiny">🟢 Low Scrutiny</option>
+            </select>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Drop Zone -->
+        <div class="section-label">Upload Image<span id="multiLabel" style="margin-left:6px; font-size:0.65rem; color:var(--accent-light); font-weight:700; letter-spacing:0.3px;">· Multiple files supported</span></div>
+        <div class="drop-zone" id="dropZone">
+            <img id="previewImg" src="" alt="Preview">
+            <div class="preview-grid" id="previewGrid"></div>
+            <div id="dropContent">
+                <span class="drop-icon">📁</span>
+                <div class="drop-title">Drag & Drop images here</div>
+                <div class="drop-sub">Supports JPG, PNG, WEBP · Max 10MB each · Multiple files OK</div>
+                <span class="browse-btn" onclick="document.getElementById('fileInput').click()">Browse Files</span>
+            </div>
+        </div>
+        <div class="file-count-badge" id="fileCountBadge">📎 <span id="fileCountText"></span></div>
+        <input type="file" id="fileInput" accept="image/*" multiple onchange="handleFiles(this.files)">
+
+        <!-- Loader -->
+        <div class="loader-wrap" id="loaderWrap">
+            <div class="spinner"></div>
+            <div class="loader-text">Analyzing image with AI<span
+                    class="loader-dots"><span>.</span><span>.</span><span>.</span></span></div>
+        </div>
+
+        <!-- File Info Bar -->
+        <div class="file-info-bar" id="fileInfoBar">
+            <div class="fi-item">📄 <span id="fiName">—</span></div>
+            <div class="fi-sep"></div>
+            <div class="fi-item">💾 <span id="fiSize">—</span></div>
+            <div class="fi-sep"></div>
+            <div class="fi-item">📐 <span id="fiDims">—</span></div>
+            <div class="fi-sep"></div>
+            <div class="fi-item" id="fiWarnWrap" style="display:none;"><span class="fi-warn" id="fiWarn"></span></div>
+        </div>
+
+        <!-- Upload Button -->
+        <button id="uploadBtn" onclick="triggerUpload()" disabled>Analyze Image</button>
+
+        <!-- Result Box (single file) -->
+        <div class="result-box" id="resultBox">
+            <div class="result-icon" id="resultIcon"></div>
+            <div class="result-title" id="resultTitle"></div>
+            <div class="result-desc" id="resultDesc"></div>
+
+            <!-- Confidence Gauge -->
+            <div class="conf-gauge-wrap" id="confGaugeWrap">
+                <div class="conf-gauge-label">Detection Confidence</div>
+                <div class="conf-gauge-track">
+                    <div class="conf-gauge-fill" id="confGaugeFill"></div>
+                </div>
+                <div class="conf-gauge-ticks">
+                    <span>Low</span><span>Medium</span><span>High</span>
+                </div>
+            </div>
+
+            <div id="trackingWrap" style="display:none;">
+                <div class="tracking-label">TRACKING ID</div>
+                <div class="tracking-id" id="trackingId"></div>
+            </div>
+            <div id="countdownWrap" style="display:none;">
+                <div class="countdown-bar">
+                    <div class="countdown-fill" id="countdownFill"></div>
+                </div>
+                <div class="countdown-text" id="countdownText"></div>
+            </div>
+
+            <!-- Explain Decision Button (Hidden by default) -->
+            <div id="explainBtnWrap" style="display:none;">
+                <button class="explain-trigger-btn" onclick="triggerExplainDisplay()">
+                    🔍 Why was this flagged? Explain Decision
+                </button>
+            </div>
+        </div>
+
+        <!-- Explain Panel (shown for MEDIUM / HIGH) -->
+        <div class="explain-panel" id="explainPanel">
+            <div class="explain-header" onclick="toggleExplain()">
+                <div class="explain-header-left">
+                    🔍 <span>Why was this flagged?</span>
+                    <span style="font-size:0.7rem; font-weight:500; color:var(--text-muted); margin-left:4px;">Powered by Grad-CAM + LIME</span>
+                </div>
+                <span class="explain-chevron">▼</span>
+            </div>
+            <div class="explain-body" id="explainBody">
+                <div class="explain-loading" id="explainLoading">
+                    <div class="explain-spinner"></div>
+                    <span>Running explainability analysis…</span>
+                </div>
+                <div id="explainContent" style="display:none; flex-direction:column; gap:16px;">
+
+                    <!-- Grad-CAM -->
+                    <div>
+                        <div class="explain-section-title">🌡️ Grad-CAM Attention Map</div>
+                        <div class="explain-heatmap" id="explainHeatmap">
+                            <img id="heatmapImg" src="" alt="Grad-CAM Heatmap">
+                            <div class="explain-heatmap-label">AI attention regions highlighted</div>
+                        </div>
+                        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:6px; line-height:1.5;">
+                            Red/yellow areas show where the AI model focused most when making its decision. Concentrated attention on facial features or uniform textures is a strong indicator of AI generation.
+                        </div>
+                    </div>
+
+                    <!-- LIME -->
+                    <div>
+                        <div class="explain-section-title">🧩 LIME Region Analysis</div>
+                        <div class="lime-row">
+                            <span class="lime-label">AI-supporting regions</span>
+                            <div class="lime-bar-track"><div class="lime-bar-fill" id="limeAiBar" style="background:var(--red);"></div></div>
+                            <span class="lime-val" id="limeAiVal" style="color:var(--red);">—</span>
+                        </div>
+                        <div class="lime-row">
+                            <span class="lime-label">Real-supporting regions</span>
+                            <div class="lime-bar-track"><div class="lime-bar-fill" id="limeRealBar" style="background:var(--green);"></div></div>
+                            <span class="lime-val" id="limeRealVal" style="color:var(--green);">—</span>
+                        </div>
+                        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:6px; line-height:1.5;" id="limeInterpretation"></div>
+                    </div>
+
+                    <!-- Reliability Score -->
+                    <div>
+                        <div class="explain-section-title">📊 Model Reliability</div>
+                        <div class="reliability-row">
+                            <div class="reliability-circle" id="reliabilityCircle"></div>
+                            <div class="reliability-text" id="reliabilityText"></div>
+                        </div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div>
+                        <div class="explain-section-title">📝 AI Decision Summary</div>
+                        <div class="explain-summary" id="explainSummary"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Batch Results (multiple files) -->
+        <div class="batch-results" id="batchResults"></div>
+
+        <!-- Enter Button -->
+        <button id="enterBtn" onclick="window.location.href='/'">✅ Enter Platform</button>
+
+        <!-- Re-upload Button -->
+        <button id="reUploadBtn" onclick="resetAll()">↩ Analyze Another Image</button>
+
+    </div>
+
+    <!-- Upload History (outside card) -->
+    <div class="history-section" id="historySection">
+        <div class="history-title">🕓 Session Upload History</div>
+        <div class="history-list" id="historyList"></div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <p>Powered by <strong>FaceOff AI</strong> · EfficientNet B0 · Grad-CAM · LIME</p>
+        <p style="margin-top:6px;"><a href="/admin">Admin Dashboard</a> · <a href="/architecture">System
+                Architecture</a></p>
+    </footer>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const loaderWrap = document.getElementById('loaderWrap');
+        const resultBox = document.getElementById('resultBox');
+        const enterBtn = document.getElementById('enterBtn');
+        const previewImg = document.getElementById('previewImg');
+        const dropContent = document.getElementById('dropContent');
+        const previewGrid = document.getElementById('previewGrid');
+        const fileCountBadge = document.getElementById('fileCountBadge');
+        const batchResults = document.getElementById('batchResults');
+        const reUploadBtn = document.getElementById('reUploadBtn');
+        const fileInfoBar = document.getElementById('fileInfoBar');
+        const explainPanel = document.getElementById('explainPanel');
+        const historySection = document.getElementById('historySection');
+        const historyList = document.getElementById('historyList');
+
+        let selectedFiles = []; // always an array
+        let currentItemId = null;
+        let explainLoaded = false;
+        let sessionHistory = []; // [{name, size, risk, thumb, time}]
+
+        // ── DRAG & DROP ──
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            if (files.length) handleFiles(files);
+        });
+        dropZone.addEventListener('click', e => {
+            if (e.target === dropZone || e.target.classList.contains('drop-icon') ||
+                e.target.classList.contains('drop-title') || e.target.classList.contains('drop-sub')) {
+                fileInput.click();
+            }
+        });
+
+        // ── HANDLE FILES ──
+        function handleFiles(files) {
+            const arr = Array.from(files).filter(f => f.type.startsWith('image/'));
+            if (!arr.length) return;
+            selectedFiles = arr;
+            resetResult();
+            showFileInfoBar(arr);
+
+            if (arr.length === 1) {
+                // Single file: show single preview
+                previewGrid.style.display = 'none';
+                fileCountBadge.style.display = 'none';
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    previewImg.src = ev.target.result;
+                    previewImg.style.display = 'block';
+                    dropContent.style.display = 'none';
+                    dropZone.classList.add('has-image');
+                };
+                reader.readAsDataURL(arr[0]);
+            } else {
+                // Multiple files: show grid
+                previewImg.style.display = 'none';
+                dropContent.style.display = 'none';
+                dropZone.classList.add('has-image');
+                dropZone.style.padding = '12px';
+                renderPreviewGrid(arr);
+                fileCountBadge.style.display = 'flex';
+                document.getElementById('fileCountText').textContent =
+                    `${arr.length} images selected – will be analyzed as a batch`;
+            }
+
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = arr.length > 1 ? `Analyze ${arr.length} Images` : 'Analyze Image';
+        }
+
+        // ── FILE INFO BAR ──
+        function showFileInfoBar(arr) {
+            if (arr.length !== 1) { fileInfoBar.style.display = 'none'; return; }
+            const f = arr[0];
+            document.getElementById('fiName').textContent = f.name.length > 22 ? f.name.substring(0,20)+'…' : f.name;
+            document.getElementById('fiSize').textContent = formatBytes(f.size);
+            // Get image dimensions
+            const url = URL.createObjectURL(f);
+            const img = new Image();
+            img.onload = () => {
+                document.getElementById('fiDims').textContent = `${img.naturalWidth}×${img.naturalHeight}`;
+                URL.revokeObjectURL(url);
+            };
+            img.src = url;
+            // Warnings
+            const warnWrap = document.getElementById('fiWarnWrap');
+            const warn = document.getElementById('fiWarn');
+            if (f.size > 10 * 1024 * 1024) {
+                warn.textContent = '⚠ File exceeds 10MB';
+                warnWrap.style.display = 'flex';
+            } else if (!['image/jpeg','image/png','image/webp'].includes(f.type)) {
+                warn.textContent = '⚠ Unsupported format';
+                warnWrap.style.display = 'flex';
+            } else {
+                warnWrap.style.display = 'none';
+            }
+            fileInfoBar.style.display = 'flex';
+        }
+
+        function formatBytes(b) {
+            if (b < 1024) return b + ' B';
+            if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+            return (b/(1024*1024)).toFixed(2) + ' MB';
+        }
+
+        function renderPreviewGrid(files) {
+            previewGrid.style.display = 'grid';
+            previewGrid.innerHTML = '';
+            files.forEach((file, idx) => {
+                const item = document.createElement('div');
+                item.className = 'preview-item';
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    item.innerHTML = `
+                        <img src="${ev.target.result}" alt="">
+                        <button class="remove-btn" onclick="removeFile(${idx})">✕</button>
+                        <div class="file-name">${file.name}</div>`;
+                };
+                reader.readAsDataURL(file);
+                previewGrid.appendChild(item);
+            });
+        }
+
+        function removeFile(idx) {
+            selectedFiles.splice(idx, 1);
+            if (selectedFiles.length === 0) {
+                resetDropZone();
+            } else {
+                handleFiles(selectedFiles);
+            }
+        }
+
+        function resetDropZone() {
+            selectedFiles = [];
+            previewImg.style.display = 'none';
+            previewImg.src = '';
+            previewGrid.style.display = 'none';
+            previewGrid.innerHTML = '';
+            dropContent.style.display = 'block';
+            dropZone.classList.remove('has-image');
+            dropZone.style.padding = '';
+            fileCountBadge.style.display = 'none';
+            fileInfoBar.style.display = 'none';
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Analyze Image';
+            fileInput.value = '';
+        }
+
+        function resetAll() {
+            resetDropZone();
+            resetResult();
+            reUploadBtn.style.display = 'none';
+            currentItemId = null;
+            explainLoaded = false;
+        }
+
+        // ── UPLOAD ──
+        function triggerUpload() {
+            if (!selectedFiles.length) return;
+
+            loaderWrap.style.display = 'flex';
+            document.getElementById('loaderWrap').querySelector('.loader-text').innerHTML =
+                selectedFiles.length > 1
+                    ? `Analyzing ${selectedFiles.length} images<span class="loader-dots"><span>.</span><span>.</span><span>.</span></span>`
+                    : `Analyzing image with AI<span class="loader-dots"><span>.</span><span>.</span><span>.</span></span>`;
+            uploadBtn.disabled = true;
+            resultBox.style.display = 'none';
+            batchResults.style.display = 'none';
+            enterBtn.style.display = 'none';
+
+            if (selectedFiles.length === 1) {
+                uploadSingle(selectedFiles[0]);
+            } else {
+                uploadBatch(selectedFiles);
+            }
+            fileInput.value = '';
+        }
+
+        function uploadSingle(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('risk_mode', document.getElementById('riskMode').value);
+
+            fetch('/analyze', { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    loaderWrap.style.display = 'none';
+                    const analysis = data.analysis || data;
+                    const prediction = analysis.prediction;
+                    const risk = prediction.risk_tier;
+                    const trackingId = data.id;
+                    currentItemId = trackingId;
+                    explainLoaded = false;
+                    showResult(risk, trackingId, file);
+                })
+                .catch(() => {
+                    loaderWrap.style.display = 'none';
+                    showError();
+                });
+        }
+
+        function uploadBatch(files) {
+            const formData = new FormData();
+            files.forEach(f => formData.append('files', f));
+            formData.append('risk_mode', document.getElementById('riskMode').value);
+
+            fetch('/analyze/batch', { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    loaderWrap.style.display = 'none';
+                    renderBatchResults(data.results || []);
+                })
+                .catch(() => {
+                    loaderWrap.style.display = 'none';
+                    showError();
+                });
+        }
+
+        function renderBatchResults(results) {
+            batchResults.style.display = 'block';
+            if (!results.length) {
+                batchResults.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:0.85rem;">No results returned.</div>';
+                return;
+            }
+
+            let allLow = true;
+            batchResults.innerHTML = results.map((item, idx) => {
+                const prediction = (item.result || {}).prediction || {};
+                const risk = prediction.risk_tier || 'UNKNOWN';
+                const fname = item.file_name || `Image ${idx + 1}`;
+                if (risk !== 'LOW') allLow = false;
+
+                const riskColor = risk === 'HIGH' ? 'var(--red)' : risk === 'MEDIUM' ? 'var(--orange)' : 'var(--green)';
+                const riskIcon = risk === 'HIGH' ? '🚫' : risk === 'MEDIUM' ? '⚠️' : '✅';
+                const riskLabel = risk === 'HIGH' ? 'Blocked' : risk === 'MEDIUM' ? 'Under Review' : 'Approved';
+                const trackId = risk === 'MEDIUM' ? `<div class="batch-sub" style="font-family:monospace;">ID: ${item.id}</div>` : '';
+
+                // Get preview from selectedFiles
+                const previewSrc = selectedFiles[idx] ? URL.createObjectURL(selectedFiles[idx]) : '';
+                const thumbHtml = previewSrc
+                    ? `<img class="batch-thumb" src="${previewSrc}" alt="">`
+                    : `<div class="batch-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">🖼️</div>`;
+
+                return `
+                <div class="batch-item">
+                    ${thumbHtml}
+                    <div class="batch-info">
+                        <div class="batch-fname">${fname}</div>
+                        ${trackId}
+                    </div>
+                    <div class="batch-status">
+                        <span class="risk-pill ${risk}" style="font-size:0.72rem;">${riskIcon} ${riskLabel}</span>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // If all passed, show enter button
+            if (allLow) enterBtn.style.display = 'block';
+            uploadBtn.disabled = false;
+        }
+
+        function showResult(risk, trackingId, file) {
+            resultBox.style.display = 'block';
+            const icon = document.getElementById('resultIcon');
+            const title = document.getElementById('resultTitle');
+            const desc = document.getElementById('resultDesc');
+            const trackingWrap = document.getElementById('trackingWrap');
+            const trackingIdEl = document.getElementById('trackingId');
+            const countdownWrap = document.getElementById('countdownWrap');
+            const confGaugeWrap = document.getElementById('confGaugeWrap');
+            const confGaugeFill = document.getElementById('confGaugeFill');
+            const explainBtnWrap = document.getElementById('explainBtnWrap');
+
+            trackingWrap.style.display = 'none';
+            countdownWrap.style.display = 'none';
+            explainPanel.style.display = 'none';
+            explainBtnWrap.style.display = 'none';
+
+            // Confidence gauge
+            const gaugeMap = { LOW: { pct: 20, color: 'var(--green)' }, MEDIUM: { pct: 60, color: 'var(--orange)' }, HIGH: { pct: 92, color: 'var(--red)' } };
+            const g = gaugeMap[risk] || gaugeMap.MEDIUM;
+            confGaugeWrap.style.display = 'block';
+            setTimeout(() => { confGaugeFill.style.width = g.pct + '%'; confGaugeFill.style.background = g.color; }, 80);
+
+            if (risk === 'LOW') {
+                resultBox.className = 'result-box low';
+                icon.textContent = '✅';
+                title.textContent = 'Upload Approved';
+                desc.textContent = 'Your image has passed AI moderation. You may proceed to the platform.';
+                enterBtn.style.display = 'block';
+                uploadBtn.disabled = false;
+            }
+            else if (risk === 'MEDIUM') {
+                resultBox.className = 'result-box medium';
+                icon.textContent = '⚠️';
+                title.textContent = 'Manual Review Required';
+                desc.textContent = 'Your image has been flagged for human review. A moderator will review it shortly. You can track the status using your Tracking ID below.';
+                trackingWrap.style.display = 'block';
+                trackingIdEl.textContent = trackingId || 'N/A';
+                uploadBtn.disabled = true;
+                // Show explain button
+                explainBtnWrap.style.display = 'block';
+            }
+            else if (risk === 'HIGH') {
+                resultBox.className = 'result-box high';
+                icon.textContent = '🚫';
+                title.textContent = 'Upload Blocked – Suspected AI Manipulation';
+                desc.textContent = 'This image has been identified as potentially AI-generated or manipulated. Access denied. You may appeal this decision by contacting support.';
+                uploadBtn.disabled = true;
+                countdownWrap.style.display = 'block';
+                startCountdown(5);
+                // Show explain button
+                explainBtnWrap.style.display = 'block';
+            }
+
+            reUploadBtn.style.display = 'block';
+
+            // Add to session history
+            if (file) addToHistory(file, risk, trackingId);
+        }
+
+        // ── EXPLAIN PANEL ──
+        function triggerExplainDisplay() {
+            document.getElementById('explainBtnWrap').style.display = 'none';
+            explainPanel.style.display = 'block';
+            // Scroll to explain panel
+            setTimeout(() => {
+                explainPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                toggleExplain(true);
+            }, 100);
+        }
+
+        function toggleExplain(forceOpen = false) {
+            const panel = explainPanel;
+            if (forceOpen) {
+                panel.classList.add('open');
+            } else {
+                panel.classList.toggle('open');
+            }
+            if (panel.classList.contains('open') && !explainLoaded) {
+                loadExplainability();
+            }
+        }
+
+        function loadExplainability() {
+            if (!currentItemId) return;
+            const loading = document.getElementById('explainLoading');
+            const content = document.getElementById('explainContent');
+            loading.style.display = 'flex';
+            content.style.display = 'none';
+
+            fetch(`/explain/${currentItemId}`)
+                .then(r => r.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    content.style.display = 'flex';
+                    explainLoaded = true;
+                    renderExplain(data);
+                })
+                .catch(() => {
+                    loading.innerHTML = '<span style="color:var(--text-muted); font-size:0.78rem;">⚠ Explainability data unavailable. The server may still be processing.</span>';
+                });
+        }
+
+        function renderExplain(data) {
+            // Grad-CAM
+            const gradcam = data.explainability?.grad_cam;
+            const heatmapImg = document.getElementById('heatmapImg');
+            const heatmapWrap = document.getElementById('explainHeatmap');
+            if (gradcam?.heatmap_url) {
+                heatmapImg.src = gradcam.heatmap_url;
+                heatmapImg.onerror = () => { heatmapWrap.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:0.78rem;">Heatmap not available</div>'; };
+            } else {
+                heatmapWrap.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:0.78rem;">Heatmap not available</div>';
+            }
+
+            // LIME
+            const lime = data.explainability?.lime?.lime_summary;
+            if (lime) {
+                const total = (lime.ai_supporting_regions + lime.real_supporting_regions) || 1;
+                const aiPct = Math.round((lime.ai_supporting_regions / total) * 100);
+                const realPct = Math.round((lime.real_supporting_regions / total) * 100);
+                setTimeout(() => {
+                    document.getElementById('limeAiBar').style.width = aiPct + '%';
+                    document.getElementById('limeRealBar').style.width = realPct + '%';
+                }, 100);
+                document.getElementById('limeAiVal').textContent = lime.ai_supporting_regions;
+                document.getElementById('limeRealVal').textContent = lime.real_supporting_regions;
+                document.getElementById('limeInterpretation').textContent = lime.interpretation || '';
+            }
+
+            // Reliability
+            const rel = data.explainability?.reliability_score ?? null;
+            const relCircle = document.getElementById('reliabilityCircle');
+            const relText = document.getElementById('reliabilityText');
+            if (rel !== null) {
+                const relPct = Math.round(rel * 100);
+                const relColor = relPct > 70 ? 'var(--red)' : relPct > 40 ? 'var(--orange)' : 'var(--green)';
+                relCircle.textContent = relPct + '%';
+                relCircle.style.borderColor = relColor;
+                relCircle.style.color = relColor;
+                const relDesc = relPct > 70
+                    ? 'High confidence — the model is very certain about this decision.'
+                    : relPct > 40
+                    ? 'Moderate confidence — some uncertainty exists, hence manual review.'
+                    : 'Lower confidence — the model detected weak signals of AI generation.';
+                relText.textContent = relDesc;
+            }
+
+            // Summary
+            const summary = data.explainability?.summary;
+            if (summary) document.getElementById('explainSummary').textContent = summary;
+        }
+
+        // ── SESSION HISTORY ──
+        function addToHistory(file, risk, trackingId) {
+            const reader = new FileReader();
+            reader.onload = ev => {
+                sessionHistory.unshift({
+                    name: file.name,
+                    size: formatBytes(file.size),
+                    risk,
+                    thumb: ev.target.result,
+                    time: new Date().toLocaleTimeString(),
+                    id: trackingId
+                });
+                if (sessionHistory.length > 5) sessionHistory.pop();
+                renderHistory();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderHistory() {
+            if (!sessionHistory.length) { historySection.style.display = 'none'; return; }
+            historySection.style.display = 'block';
+            const riskLabel = { LOW: 'Approved', MEDIUM: 'In Review', HIGH: 'Blocked' };
+            historyList.innerHTML = sessionHistory.map(h => `
+                <div class="history-entry">
+                    <img class="history-thumb" src="${h.thumb}" alt="">
+                    <div class="history-info">
+                        <div class="history-fname">${h.name}</div>
+                        <div class="history-meta">${h.size} · ${h.time}</div>
+                    </div>
+                    <span class="history-badge ${h.risk}">${riskLabel[h.risk] || h.risk}</span>
+                </div>`).join('');
+        }
+
+        function startCountdown(seconds) {
+            const fill = document.getElementById('countdownFill');
+            const text = document.getElementById('countdownText');
+            let remaining = seconds;
+            text.textContent = `Redirecting in ${remaining}s...`;
+            fill.style.width = '100%';
+            const interval = setInterval(() => {
+                remaining--;
+                fill.style.width = (remaining / seconds * 100) + '%';
+                text.textContent = `Redirecting in ${remaining}s...`;
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    window.location.href = '/';
+                }
+            }, 1000);
+        }
+
+        function showError() {
+            resultBox.style.display = 'block';
+            resultBox.className = 'result-box high';
+            document.getElementById('resultIcon').textContent = '⚠️';
+            document.getElementById('resultTitle').textContent = 'Server Error';
+            document.getElementById('resultDesc').textContent = 'Unable to connect to the moderation server. Please try again.';
+            uploadBtn.disabled = false;
+        }
+
+        function resetResult() {
+            resultBox.style.display = 'none';
+            batchResults.style.display = 'none';
+            enterBtn.style.display = 'none';
+            reUploadBtn.style.display = 'none';
+            explainPanel.style.display = 'none';
+            explainPanel.classList.remove('open');
+            document.getElementById('explainBtnWrap').style.display = 'none';
+            document.getElementById('confGaugeWrap').style.display = 'none';
+            document.getElementById('confGaugeFill').style.width = '0%';
+            document.getElementById('trackingWrap').style.display = 'none';
+            document.getElementById('countdownWrap').style.display = 'none';
+            // Reset explain internals
+            document.getElementById('explainLoading').style.display = 'flex';
+            document.getElementById('explainContent').style.display = 'none';
+            explainLoaded = false;
+        }
+    </script>
+</body>
+
+</html>

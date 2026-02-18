@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <title>FaceOff - Image Preview</title>
+        <style>
+            body { 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                margin: 0;
+                padding: 20px;
+                background: #f5f5f5;
+            }
+            .container {
+                max-width: 1000px;
+                margin: 0 auto;
+                background: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            h1 { color: #333; margin-bottom: 30px; }
+            .image-container {
+                display: flex;
+                gap: 20px;
+                margin-bottom: 30px;
+                flex-wrap: wrap;
+            }
+            .image-box {
+                flex: 1;
+                min-width: 300px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 15px;
+                background: #fafafa;
+            }
+            .image-box h3 {
+                margin-top: 0;
+                color: #666;
+                border-bottom: 1px solid #eee;
+                padding-bottom: 10px;
+            }
+            .image-box img {
+                width: 100%;
+                height: auto;
+                border-radius: 5px;
+            }
+            .info-box {
+                background: #f8f9fa;
+                border-radius: 8px;
+                padding: 20px;
+                margin-top: 20px;
+            }
+            .decision {
+                font-size: 24px;
+                font-weight: bold;
+                color: orange;
+                margin: 10px 0;
+            }
+            .badge {
+                display: inline-block;
+                padding: 5px 10px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: bold;
+                margin-right: 10px;
+            }
+            .badge.high { background: #ffebee; color: #c62828; }
+            .badge.medium { background: #fff3e0; color: #ef6c00; }
+            .badge.low { background: #e8f5e8; color: #2e7d32; }
+            .links {
+                margin-top: 20px;
+                padding-top: 20px;
+                border-top: 1px solid #eee;
+            }
+            .links a {
+                margin-right: 15px;
+                color: #2196f3;
+                text-decoration: none;
+            }
+            .links a:hover { text-decoration: underline; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🔍 FaceOff Analysis: 8b411879-79a3-4205-b436-a59045eccba1.jpeg</h1>
+            
+            <div class="image-container">
+                <div class="image-box">
+                    <h3>📸 Original Image</h3>
+                    <img src="/image/8b411879-79a3-4205-b436-a59045eccba1" alt="Original">
+                </div>
+                <div class="image-box">
+                    <h3>🔥 Grad-CAM Heatmap</h3>
+                    <img src="/visualize/heatmap/8b411879-79a3-4205-b436-a59045eccba1" alt="Heatmap" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'224\' height=\'224\'><rect width=\'224\' height=\'224\' fill=\'%23f0f0f0\'/><text x=\'20\' y=\'120\' fill=\'%23999\'>No heatmap available</text></svg>';">
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <span class="badge medium">MEDIUM</span>
+                <span class="badge medium">Confidence: 49.4%</span>
+                
+                <div class="decision">Medium Risk - Manual Review (Uncertain)</div>
+                
+                <p><strong>Label:</strong> Uncertain</p>
+                <p><strong>Risk Tier:</strong> MEDIUM</p>
+                
+                <div class="links">
+                    <strong>View Options:</strong><br><br>
+                    <a href="/image/8b411879-79a3-4205-b436-a59045eccba1" target="_blank">📷 Original Image</a>
+                    <a href="/visualize/heatmap/8b411879-79a3-4205-b436-a59045eccba1" target="_blank">🔥 Heatmap</a>
+                    <a href="/compare/8b411879-79a3-4205-b436-a59045eccba1" target="_blank">🖼️ Side-by-Side</a>
+                    <a href="/visualize/8b411879-79a3-4205-b436-a59045eccba1" target="_blank">📊 JSON Package</a>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    
